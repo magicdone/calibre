@@ -23,8 +23,8 @@ CREATE TABLE notes_db.notes_resources_link ( id INTEGER PRIMARY KEY,
     UNIQUE(note, resource)
 );
 
-CREATE VIRTUAL TABLE notes_db.notes_fts USING fts5(searchable_text, content = 'notes', content_rowid = 'id', tokenize = 'calibre remove_diacritics 2');
-CREATE VIRTUAL TABLE notes_db.notes_fts_stemmed USING fts5(searchable_text, content = 'notes', content_rowid = 'id', tokenize = 'porter calibre remove_diacritics 2');
+CREATE VIRTUAL TABLE notes_db.notes_fts USING fts5(searchable_text, content = 'notes', content_rowid = 'id');
+CREATE VIRTUAL TABLE notes_db.notes_fts_stemmed USING fts5(searchable_text, content = 'notes', content_rowid = 'id');
 
 CREATE TRIGGER notes_db.notes_fts_insert_trg AFTER INSERT ON notes_db.notes 
 BEGIN

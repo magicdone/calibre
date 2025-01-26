@@ -347,10 +347,10 @@ class Connection(apsw.Connection):  # {{{
 
     def __init__(self, path):
         from calibre.utils.localization import get_lang
-        from calibre_extensions.sqlite_extension import set_ui_language
-        set_ui_language(get_lang())
+        # from calibre_extensions.sqlite_extension import set_ui_language
+        # set_ui_language(get_lang())
         super().__init__(path)
-        plugins.load_apsw_extension(self, 'sqlite_extension')
+        # plugins.load_apsw_extension(self, 'sqlite_extension')
         self.fts_dbpath = self.notes_dbpath = None
 
         self.setbusytimeout(self.BUSY_TIMEOUT)
