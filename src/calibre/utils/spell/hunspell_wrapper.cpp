@@ -10,7 +10,7 @@
 #include <Python.h>
 #include <new>
 #include <string>
-#include <hunspell.hxx>
+#include <hunspell/hunspell.hxx>
 
 typedef struct {
 	PyObject_HEAD
