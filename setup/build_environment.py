@@ -113,7 +113,7 @@ qraw = subprocess.check_output([QMAKE, '-query']).decode('utf-8')
 
 
 def readvar(name):
-    return re.search('^%s:(.+)$' % name, qraw, flags=re.M).group(1).strip()
+    return re.search(f'^{name}:(.+)$', qraw, flags=re.M).group(1).strip()
 
 
 qt = {x:readvar(y) for x, y in {'libs':'QT_INSTALL_LIBS', 'plugins':'QT_INSTALL_PLUGINS'}.items()}
@@ -224,7 +224,7 @@ if os.path.exists(os.path.join(sw, 'ffmpeg')):
 if 'PODOFO_PREFIX' in os.environ:
     os.environ['PODOFO_LIB_DIR'] = os.path.join(os.environ['PODOFO_PREFIX'], 'lib')
     os.environ['PODOFO_INC_DIR'] = os.path.join(os.environ['PODOFO_PREFIX'], 'include', 'podofo')
-    os.environ['PODOFO_LIB_NAME'] = os.path.join(os.environ['PODOFO_PREFIX'], 'lib', 'libpodofo.so.1')
+    os.environ['PODOFO_LIB_NAME'] = os.path.join(os.environ['PODOFO_PREFIX'], 'lib', 'libpodofo.dylib' if ismacos else 'libpodofo.so')
 podofo_lib = os.environ.get('PODOFO_LIB_DIR', podofo_lib)
 podofo_inc = os.environ.get('PODOFO_INC_DIR', podofo_inc)
 podofo = os.environ.get('PODOFO_LIB_NAME', 'podofo')

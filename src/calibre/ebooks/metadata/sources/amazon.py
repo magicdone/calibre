@@ -333,7 +333,7 @@ class Worker(Thread):  # Get details {{{
         self.publisher_names = {'Publisher', 'Uitgever', 'Verlag', 'Utgivare', 'Herausgeber',
                                 'Editore', 'Editeur', 'Éditeur', 'Editor', 'Editora', '出版社'}
 
-        self.language_xpath =    '''
+        self.language_xpath = '''
             descendant::*[
                 starts-with(text(), "Language:") \
                 or text() = "Language" \
@@ -365,7 +365,7 @@ class Worker(Thread):  # Get details {{{
             r'([0-9.,]+) ?(out of|von|van|su|étoiles sur|つ星のうち|de un máximo de|de|av) '
             r'([\d\.]+)( (stars|Sternen|stelle|estrellas|estrelas|sterren|stjärnor)){0,1}'
         )
-        self.ratings_pat_cn = re.compile('([0-9.]+) 颗星，最多 5 颗星')
+        self.ratings_pat_cn = re.compile(r'([0-9.]+) 颗星，最多 5 颗星')
         self.ratings_pat_jp = re.compile(r'\d+つ星のうち([\d\.]+)')
 
         lm = {
@@ -564,9 +564,9 @@ class Worker(Thread):  # Get details {{{
         res = self.tostring(elem, encoding='unicode', method='text')
         if only_printable:
             try:
-                filtered_characters = list(s for s in res if s.isprintable())
+                filtered_characters = [s for s in res if s.isprintable()]
             except AttributeError:
-                filtered_characters = list(s for s in res if s in string.printable)
+                filtered_characters = [s for s in res if s in string.printable]
             res = ''.join(filtered_characters)
         return res.strip()
 
@@ -724,8 +724,8 @@ class Worker(Thread):  # Get details {{{
         # remove all attributes from tags
         desc = re.sub(r'<([a-zA-Z0-9]+)\s[^>]+>', r'<\1>', desc)
         # Collapse whitespace
-        # desc = re.sub('\n+', '\n', desc)
-        # desc = re.sub(' +', ' ', desc)
+        # desc = re.sub(r'\n+', '\n', desc)
+        # desc = re.sub(r' +', ' ', desc)
         # Remove the notice about text referring to out of print editions
         desc = re.sub(r'(?s)<em>--This text ref.*?</em>', '', desc)
         # Remove comments
@@ -910,7 +910,7 @@ class Worker(Thread):  # Get details {{{
                         seen.add(lraw)
         return ans
 
-    def parse_cover(self, root, raw=b""):
+    def parse_cover(self, root, raw=b''):
         # Look for the image URL in javascript, using the first image in the
         # image gallery as the cover
         import json
@@ -919,7 +919,7 @@ class Worker(Thread):  # Get details {{{
             m = imgpat.search(script.text or '')
             if m is not None:
                 return m.group(1)
-        imgpat = re.compile(r"""'imageGalleryData'\s*:\s*(\[\s*{.+])""")
+        imgpat = re.compile(r''''imageGalleryData'\s*:\s*(\[\s*{.+])''')
         for script in root.xpath('//script'):
             m = imgpat.search(script.text or '')
             if m is not None:
@@ -1090,7 +1090,7 @@ class Worker(Thread):  # Get details {{{
 class Amazon(Source):
 
     name = 'Amazon.com'
-    version = (1, 3, 11)
+    version = (1, 3, 12)
     minimum_calibre_version = (2, 82, 0)
     description = _('Downloads metadata and covers from Amazon')
 
@@ -1131,7 +1131,7 @@ class Amazon(Source):
     options = (
         Option('domain', 'choices', 'com', _('Amazon country website to use:'),
                _('Metadata from Amazon will be fetched using this '
-                 'country\'s Amazon website.'), choices=AMAZON_DOMAINS),
+                 "country's Amazon website."), choices=AMAZON_DOMAINS),
         Option('server', 'choices', 'auto', _('Server to get data from:'),
                _(
                    'Amazon has started blocking attempts to download'
@@ -1219,7 +1219,7 @@ class Amazon(Source):
         self.set_amazon_id_touched_fields()
 
     def set_amazon_id_touched_fields(self):
-        ident_name = "identifier:amazon"
+        ident_name = 'identifier:amazon'
         if self.domain != 'com':
             ident_name += '_' + self.domain
         tf = [x for x in self.touched_fields if not
@@ -1344,7 +1344,7 @@ class Amazon(Source):
         terms = []
         q = {'search-alias': 'aps',
              'unfiltered': '1',
-             }
+        }
 
         if domain == 'com':
             q['sort'] = 'relevanceexprank'
@@ -1395,8 +1395,7 @@ class Amazon(Source):
                 q['field-keywords'] += ' ' + q.pop(f, '')
             q['field-keywords'] = q['field-keywords'].strip()
 
-        encoded_q = dict([(x.encode('utf-8', 'ignore'), y.encode(
-            'utf-8', 'ignore')) for x, y in q.items()])
+        encoded_q = {x.encode('utf-8', 'ignore'): y.encode('utf-8', 'ignore') for x, y in q.items()}
         url_query = urlencode(encoded_q)
         # amazon's servers want IRIs with unicode characters not percent esaped
         parts = []
@@ -1588,12 +1587,10 @@ class Amazon(Source):
 
             purl = urlparse(result.url)
             if '/dp/' in purl.path and site in purl.netloc:
-                url = result.cached_url
-                if url is None:
-                    url = se.get_cached_url(result.url, br, timeout=timeout)
-                if url is None:
-                    log('Failed to find cached page for:', result.url)
-                    continue
+                # We cannot use cached URL as wayback machine no longer caches
+                # amazon and Google and Bing web caches are no longer
+                # accessible.
+                url = result.url
                 if url not in matches:
                     matches.append(url)
                 if len(matches) >= 3:
@@ -1778,6 +1775,14 @@ def manual_tests(domain, **kw):  # {{{
     from calibre.ebooks.metadata.sources.test import authors_test, comments_test, isbn_test, series_test, test_identify_plugin, title_test
     all_tests = {}
     all_tests['com'] = [  # {{{
+        (  # in title
+            {'title': 'Expert C# 2008 Business Objects',
+             'authors': ['Lhotka']},
+            [title_test('Expert C#'),
+             authors_test(['Rockford Lhotka'])
+             ]
+        ),
+
         (   # Paperback with series
             {'identifiers': {'amazon': '1423146786'}},
             [title_test('Heroes of Olympus', exact=False), series_test('The Heroes of Olympus', 5)]
@@ -1802,14 +1807,6 @@ def manual_tests(domain, **kw):  # {{{
                 "Griffin's Destiny",
                 exact=True),
              comments_test('Jelena'), comments_test('Ashinji'),
-             ]
-        ),
-
-        (  # # in title
-            {'title': 'Expert C# 2008 Business Objects',
-             'authors': ['Lhotka']},
-            [title_test('Expert C#'),
-             authors_test(['Rockford Lhotka'])
              ]
         ),
 
@@ -1882,7 +1879,7 @@ def manual_tests(domain, **kw):  # {{{
         ),
         (
             {'identifiers': {'isbn': '2221116798'}},
-            [title_test('L\'étrange voyage de Monsieur Daldry',
+            [title_test("L'étrange voyage de Monsieur Daldry",
                         exact=True), authors_test(['Marc Levy'])
              ]
 
@@ -1973,7 +1970,7 @@ def manual_tests(domain, **kw):  # {{{
             [title_test('Parting Shot', exact=True),
              authors_test(['Mary Calmes'])]
         ),
-        (  # # in title
+        (  # in title
             {'title': 'Expert C# 2008 Business Objects',
              'authors': ['Lhotka']},
             [title_test('Expert C# 2008 Business Objects'),

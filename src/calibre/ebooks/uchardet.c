@@ -6,7 +6,7 @@
  */
 
 #include "Python.h"
-#include <uchardet.h>
+#include <uchardet/uchardet.h>
 
 #define CAPSULE_NAME "uchardet.detector_capsule"
 #define CAPSULE_ATTR "detector_capsule"

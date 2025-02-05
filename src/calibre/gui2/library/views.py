@@ -454,7 +454,7 @@ class BooksView(QTableView):  # {{{
         self.preserve_state = partial(PreserveViewState, self)
         self.marked_changed_listener = FunctionDispatcher(self.marked_changed)
 
-        # {{{ Column Header setup
+        # Column Header setup {{{
         self.can_add_columns = True
         self.was_restored = False
         self.allow_save_state = True
@@ -751,7 +751,7 @@ class BooksView(QTableView):  # {{{
 
             ac = getattr(m, 'column_mouse_move_action', None)
             if ac is None:
-                ac = m.column_mouse_move_action = m.addAction(_("Allow moving columns with the mouse"),
+                ac = m.column_mouse_move_action = m.addAction(_('Allow moving columns with the mouse'),
                           partial(self.column_header_context_handler, action='lock', column=col, view=view))
                 ac.setCheckable(True)
             ac.setChecked(view.column_header.sectionsMovable())
@@ -1335,7 +1335,7 @@ class BooksView(QTableView):  # {{{
     def visible_columns(self):
         h = self.horizontalHeader()
         logical_indices = (x for x in range(h.count()) if not h.isSectionHidden(x))
-        rmap = {i:x for i, x in enumerate(self.column_map)}
+        rmap = dict(enumerate(self.column_map))
         return (rmap[h.visualIndex(x)] for x in logical_indices if h.visualIndex(x) > -1)
 
     def refresh_book_details(self, force=False):
@@ -1652,11 +1652,32 @@ class BooksView(QTableView):  # {{{
             hint = QAbstractItemDelegate.EndEditHint.NoHint
         ans = super().closeEditor(editor, hint)
         if move_by is not None and self.currentIndex() == orig and self.state() is not QAbstractItemView.State.EditingState:
-            index = self.moveCursor(move_by, Qt.KeyboardModifier.NoModifier)
+            # Skip over columns that aren't editable or are implemented by a dialog
+            while True:
+                index = self.moveCursor(move_by, Qt.KeyboardModifier.NoModifier)
+                if not index.isValid():
+                    break
+                self.setCurrentIndex(index)
+                m = self._model
+                col = m.column_map[index.column()]
+                if m.is_custom_column(col):
+                    # Don't try to open editors implemented by dialogs such as
+                    # markdown, composites and comments
+                    if self.itemDelegateForIndex(index).is_editable_with_tab:
+                        break
+                elif m.flags(index) & Qt.ItemFlag.ItemIsEditable:
+                    # Standard editable column
+                    break
             if index.isValid():
                 def edit():
-                    self.setCurrentIndex(index)
-                    self.edit(index)
+                    if index.isValid():
+                        self.setCurrentIndex(index)
+                        # Tell the delegate to ignore keyboard modifiers in case
+                        # Shift-Tab is being used to move the cell.
+                        d = self.itemDelegateForIndex(index)
+                        if d is not None:
+                            d.ignore_kb_mods_on_edit = True
+                        self.edit(index)
                 QTimer.singleShot(0, edit)
         return ans
 
